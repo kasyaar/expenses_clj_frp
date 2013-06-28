@@ -15,7 +15,7 @@
          :user "expenses"
          :password "expenses"})
 
-(defn create "doc-string" [expense]
+(defn create-new-expense "doc-string" [expense]
   (prn expense)
   (sql/with-connection
     db
@@ -23,17 +23,43 @@
       (sql/insert-record :expenses exp))))
 
 
+(defn get-expense [id]
+  (sql/with-connection 
+    db
+    (sql/with-query-results 
+      results
+      ["select * from expenses where id = ?" id]
+      (cond
+        (empty? results) {:status 404}
+        :else (response (generate-string (first results)))))))
+
+(defn delete-expense [id]
+    (sql/with-connection db
+      (sql/delete-rows :expenses ["id=?" id]))
+    {:status 204})
+
+(defn update-expense [id expense]
+        (sql/with-connection db
+          (let [exp (assoc expense :id id :date nil)]
+            (sql/update-values :expenses ["id=?" id] exp)))
+        (get-expense id))
 
 (defroutes app-routes
            (GET "/" [] "Hello World")
-           (GET "/expenses" [] 
-                (sql/with-connection 
-                  db
-                  (sql/with-query-results rows
-                                          ["select * from expenses"]
-                                          (generate-string rows))))
-           (POST "/expenses" request (create (parse-string (body-string request) true))) 
+           (context "/expenses" []
+                    (defroutes expenses-routes
+                               (GET "/" [] (sql/with-connection 
+                                             db
+                                             (sql/with-query-results rows
+                                                                     ["select * from expenses"]
+                                                                     (generate-string rows))))
+                               (POST "/expenses" request (create-new-expense (parse-string (body-string request) true)))
+                               (context "/:id" [id] (defroutes expense-routes
+                                                               (GET "/" [] (get-expense id))
+                                                               (DELETE "/" [] (delete-expense id))
+                                                               (PUT "/" request (update-expense id (parse-string (body-string request) true)))))))
            (route/resources "/")
            (route/not-found "Not Found"))
+
 (defn -main [& args]
   (run-server app-routes {:port 8080}))
