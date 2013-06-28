@@ -1,4 +1,5 @@
 (ns expenses.handler
+  (:gen-class)
   (:use compojure.core
         cheshire.core
         ring.util.request
@@ -15,14 +16,6 @@
          :user "expenses"
          :password "expenses"})
 
-(defn create-new-expense "doc-string" [expense]
-  (prn expense)
-  (sql/with-connection
-    db
-    (let [exp (assoc expense :id nil :date nil)]
-      (sql/insert-record :expenses exp))))
-
-
 (defn get-expense [id]
   (sql/with-connection 
     db
@@ -32,6 +25,14 @@
       (cond
         (empty? results) {:status 404}
         :else (response (generate-string (first results)))))))
+(defn create-new-expense "doc-string" [expense]
+  (sql/with-connection
+    db
+    (let [exp (assoc expense :id nil :date nil)]
+      (let [id (:generated_key (sql/insert-record :expenses exp))]
+        (get-expense id)))))
+
+
 
 (defn delete-expense [id]
     (sql/with-connection db
@@ -53,7 +54,7 @@
                                              (sql/with-query-results rows
                                                                      ["select * from expenses"]
                                                                      (generate-string rows))))
-                               (POST "/expenses" request (create-new-expense (parse-string (body-string request) true)))
+                               (POST "/" request (create-new-expense (parse-string (body-string request) true)))
                                (context "/:id" [id] (defroutes expense-routes
                                                                (GET "/" [] (get-expense id))
                                                                (DELETE "/" [] (delete-expense id))
