@@ -46,7 +46,7 @@
         (get-expense id))
 
 (defroutes app-routes
-           (GET "/" [] "Hello World")
+           ; (GET "/" [] "Hello World")
            (context "/expenses" []
                     (defroutes expenses-routes
                                (GET "/" [] (sql/with-connection 
@@ -59,7 +59,7 @@
                                                                (GET "/" [] (get-expense id))
                                                                (DELETE "/" [] (delete-expense id))
                                                                (PUT "/" request (update-expense id (parse-string (body-string request) true)))))))
-           (route/resources "/")
+           (route/files "/")
            (route/not-found "Not Found"))
 
 (defn -main [& args]

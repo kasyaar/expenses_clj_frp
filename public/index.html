@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="js/jquery-2.0.2.min.js"></script>
+    <script type="text/javascript" src="js/reactive.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.min.css" media="screen"/>
+    <title></title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="offset2 span6">
+                <table class="table table-stripped table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Summary</th>
+                            <th>Amount</th>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablebody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="offset2 span6">
+                <a class="btn btn-primary" href="#add">Add</a>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        var expenses = $R.state([]); 
+        var expensesTable = $R(function (expenses) {
+                $("#tablebody").html("");
+                $(expenses).each(function(idx) {
+                    var item = expenses[idx];
+                    console.log(item);
+
+                    $("#tablebody").append("<tr><td>"+item.id+"</td><td>"+item.summary+"</td><td>"+item.amount+"</td><td>"+item.category+"</td><td>"+item.date+"</td><td><a class=\"btn btn-primary\" onclick=\"deleteExpense("+item.id+")\"  href=\"#\">Delete</a></td></tr>")
+                });
+        }).bindTo(expenses);
+
+        function deleteExpense(id) {
+            console.log(id);
+            $.ajax({
+                type: "DELETE",
+                url: "/expenses/"+id,
+                success: updateExpenses()
+            });
+        }
+        function updateExpenses() {
+            $.get("/expenses", function(data) {
+                var json = JSON.parse(data);
+                console.log(json);
+                expenses(json);
+            });
+        }
+        updateExpenses();
+        
+    </script> 
+</body>
+</html>
