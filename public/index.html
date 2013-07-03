@@ -6,6 +6,42 @@
     <script type="text/javascript" src="js/reactive.js"></script>
     <link rel="stylesheet" href="css/bootstrap.min.css" media="screen"/>
     <title></title>
+
+<style type="text/css">
+    body {
+    padding-top: 60px;
+    padding-bottom: 40px;
+    }
+    .sidebar-nav {
+    padding: 9px 0;
+    }
+    .modalDialog {
+    position: fixed;
+    font-family: Arial, Helvetica, sans-serif;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 99999;
+    opacity:0;
+    -webkit-transition: opacity 400ms ease-in;
+    -moz-transition: opacity 400ms ease-in;
+    transition: opacity 400ms ease-in;
+    pointer-events: none; }
+    .modalDialog:target {
+    opacity:1;
+    pointer-events: auto;
+    }
+
+    .modalDialog > div {
+    width: 400px;
+    position: relative;
+    margin: 10% auto;
+    border-radius: 10px;
+    background: #fff;
+    }
+</style>
 </head>
 <body>
     <div class="container">
@@ -29,7 +65,7 @@
         </div>
         <div class="row">
             <div class="offset2 span6">
-                <a class="btn btn-primary" href="#add">Add</a>
+                <a class="btn btn-primary" href="#openModal">Add</a>
             </div>
         </div>
     </div>
@@ -39,14 +75,11 @@
                 $("#tablebody").html("");
                 $(expenses).each(function(idx) {
                     var item = expenses[idx];
-                    console.log(item);
-
                     $("#tablebody").append("<tr><td>"+item.id+"</td><td>"+item.summary+"</td><td>"+item.amount+"</td><td>"+item.category+"</td><td>"+item.date+"</td><td><a class=\"btn btn-primary\" onclick=\"deleteExpense("+item.id+")\"  href=\"#\">Delete</a></td></tr>")
                 });
         }).bindTo(expenses);
 
         function deleteExpense(id) {
-            console.log(id);
             $.ajax({
                 type: "DELETE",
                 url: "/expenses/"+id,
@@ -56,12 +89,70 @@
         function updateExpenses() {
             $.get("/expenses", function(data) {
                 var json = JSON.parse(data);
-                console.log(json);
-                expenses(json);
+                if(json == null) {
+                    expenses([]);
+                } else {
+                    expenses(json);
+                }
+            });
+        }
+        function clearForm() {
+            $("#summary").val("");
+            $("#category").val("");
+            $("#amount").val("");
+        }
+        function saveExpense() {
+            $.ajax({
+                type: "POST",
+                url: "/expenses",
+                data: JSON.stringify(
+                    {
+                        "summary": $("#summary").val(),
+                        "category": $("#category").val(),
+                        "amount": parseFloat($("#amount").val())
+
+                    }
+                ),
+                success: function (data) {
+                    clearForm();
+                    var expense = JSON.parse(data);
+                    var l_expenses = expenses();
+                    l_expenses.push(expense); 
+                    expenses(l_expenses);
+                }
             });
         }
         updateExpenses();
         
     </script> 
+
+    <div id="openModal" class="modalDialog">
+        <div id="modal-body">
+            <div class="modal-header">
+                <a href="#close" class="close">&times;</a>
+                <h3>Welcome to expenses demo!</h3>
+            </div>
+            <div class="modal-body">
+                <table class="table">
+                    <tr>
+                        <td>Summary:</td>
+                        <td><input id="summary" type="text" /></td>
+                    </tr>
+                    <tr>
+                        <td>Amount:</td>
+                        <td><input id="amount" type="text" /></td>
+                    </tr>
+                    <tr>
+                        <td>Category:</td>
+                        <td><input id="category" type="text" /></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <a href="#close" onclick="saveExpense()" class="btn btn-success">Save</a>
+                <a href="#close" class="btn btn-primary">Close</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
